@@ -4,9 +4,24 @@ from keras.preprocessing.image import ImageDataGenerator
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.utils import shuffle
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 
-def visualize_history(history: tf.keras.callbacks.History, title = "") -> None:
+def load_data(name):
+    x_train = np.load(f'{name}/x_train.npy', allow_pickle=True)
+    y_train = np.load(f'{name}/y_train.npy', allow_pickle=True)
+    x_test = np.load(f'{name}/x_test.npy', allow_pickle=True)
+    y_test = np.load(f'{name}/y_test.npy', allow_pickle=True)
+    if name != "MODEL3":
+        x_val = np.load(f'{name}/x_val.npy', allow_pickle=True)
+        y_val = np.load(f'{name}/y_val.npy', allow_pickle=True)
+    else:
+        x_val = None
+        y_val = None
+    return x_train, y_train, x_test, y_test, x_val, y_val
+
+
+def visualize_history(history: tf.keras.callbacks.History, title = "", improvement="") -> None:
     """
     Visualize history of the training model.
 
@@ -37,7 +52,10 @@ def visualize_history(history: tf.keras.callbacks.History, title = "") -> None:
     axs[1].legend()
 
     plt.tight_layout()
-    plt.savefig(f'{title}/training.jpg')
+    if improvement == "":
+        plt.savefig(f'{title}/training.jpg')
+    else:
+        plt.savefig(f'improvement/{improvement}.jpg')
     plt.show()
 
 
@@ -84,7 +102,7 @@ def augment_data(x_train, y_train):
     return x_train, y_train
 
 
-def visualize_measures(train, test, val=[], title="", measure=""):
+def visualize_class_measures(train, test, val=[], title="", measure=""):
     barWidth = 0.25
     precision_tab = np.concatenate([np.array(train), np.array(test), np.array(val)])
     y_min = (((min(precision_tab) * 100) // 5) * 5) / 100
@@ -109,5 +127,61 @@ def visualize_measures(train, test, val=[], title="", measure=""):
     plt.legend()
     plt.tight_layout()
     plt.savefig(f'{title}/{measure}.jpg')
+    # plt.show()
+    plt.clf()
+
+
+def evaluate_model_part(y, y_pred, name="", improvement=False):
+    y_pred = np.argmax(y_pred, axis=1)
+    accuracy = accuracy_score(y, y_pred)
+    precision = precision_score(y, y_pred, average='macro')
+    recall = recall_score(y, y_pred, average='macro')
+    if not improvement:
+        print(name, ': \t', "{:.6f}".format(accuracy), "\t", "{:.6f}".format(precision), "\t", "{:.6f}".format(recall))
+        precision_class = precision_score(y, y_pred, average=None)
+        recall_class = recall_score(y, y_pred, average=None)
+        return precision_class, recall_class
+    else:
+        return accuracy, precision, recall
+
+
+def evaluate_model(model_name, name="accuracy"):
+    x_train, y_train, x_test, y_test, x_val, y_val = load_data(model_name)
+    model = tf.keras.models.load_model(f"improvement/{name}.h5")
+    y_train_pred = model.predict(x_train)
+    y_test_pred = model.predict(x_test)
+    y_val_pred = model.predict(x_val)
+
+    # model evaluation
+    print('\t\t\t\t', "accuracy", "\t", "precision", "\t", "recall")
+    evaluate_model_part(y_train, y_train_pred, "Trenujący")
+    evaluate_model_part(y_test, y_test_pred, "Testujący")
+    evaluate_model_part(y_val, y_val_pred, "Walidacyjny")
+
+
+def visualize_measures(accuracy, precision, recall, title=""):
+    barWidth = 0.25
+    precision_tab = np.concatenate([np.array(accuracy), np.array(precision), np.array(recall)])
+    y_min = (((min(precision_tab) * 100) // 5) * 5) / 100 - 0.02
+    plt.subplots(figsize=(12, 8))
+    plt.title(str(title), fontsize=15)
+
+    labels = [i for i in range(len(accuracy))]
+    br1 = np.arange(len(accuracy))
+    br2 = [x + barWidth for x in br1]
+    br3 = [x + barWidth for x in br2]
+
+    plt.bar(br1, accuracy, color='r', width=barWidth, edgecolor='grey', label='dokładność')
+    plt.bar(br2, precision, color='g', width=barWidth, edgecolor='grey', label='precyzja')
+    plt.bar(br3, recall, color='b', width=barWidth, edgecolor='grey', label='pełność')
+
+    plt.xlabel('Epoka')
+    plt.ylabel('Miara')
+    plt.xticks([r + barWidth for r in range(len(accuracy))], labels)
+    plt.ylim(y_min, 1.0)
+
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(f'improvement/{title}.jpg')
     # plt.show()
     plt.clf()

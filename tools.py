@@ -82,3 +82,32 @@ def augment_data(x_train, y_train):
 
     x_train, y_train = shuffle(x_train, y_train)
     return x_train, y_train
+
+
+def visualize_measures(train, test, val=[], title="", measure=""):
+    barWidth = 0.25
+    precision_tab = np.concatenate([np.array(train), np.array(test), np.array(val)])
+    y_min = (((min(precision_tab) * 100) // 5) * 5) / 100
+    plt.subplots(figsize=(12, 8))
+    plt.title(str(title) + " - " + str(measure), fontsize=15)
+
+    labels = [i for i in range(10)]
+    br1 = np.arange(len(train))
+    br2 = [x + barWidth for x in br1]
+    br3 = [x + barWidth for x in br2]
+
+    plt.bar(br1, train, color='r', width=barWidth, edgecolor='grey', label='trenujący')
+    plt.bar(br2, test, color='g', width=barWidth, edgecolor='grey', label='testujący')
+    if len(val) > 0:
+        plt.bar(br3, val, color='b', width=barWidth, edgecolor='grey', label='walidujący')
+
+    plt.xlabel('Etykieta')
+    plt.ylabel('Miara')
+    plt.xticks([r + barWidth for r in range(len(train))], labels)
+    plt.ylim(y_min, 1.0)
+
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(f'{title}/{measure}.jpg')
+    # plt.show()
+    plt.clf()

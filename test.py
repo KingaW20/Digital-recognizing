@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from tools import visualize_measures
 
 
 def load_data(name):
@@ -22,10 +23,14 @@ def evaluate_model_part(y, y_pred):
     precision = precision_score(y, y_pred, average='macro')
     recall = recall_score(y, y_pred, average='macro')
     f1 = f1_score(y, y_pred, average='macro')
-    print("Dokładność: {:.4f}".format(accuracy))
-    print("Precyzja: {:.4f}".format(precision))
-    print("Pełność: {:.4f}".format(recall))
-    print("F-miara: {:.4f}".format(f1))
+    print("Dokładność: " + str(accuracy))
+    print("Precyzja: " + str(precision))
+    print("Pełność: " + str(recall))
+    print("F-miara: " + str(f1))
+
+    precision_class = precision_score(y, y_pred, average=None)
+    recall_class = recall_score(y, y_pred, average=None)
+    return precision_class, recall_class
 
 
 def evaluate_model(name):
@@ -44,12 +49,17 @@ def evaluate_model(name):
 
     # model evaluation
     print("TRAINING DATA")
-    evaluate_model_part(y_train, y_train_pred)
+    precision_train, recall_train = evaluate_model_part(y_train, y_train_pred)
     print("\nTESTING DATA")
-    evaluate_model_part(y_test, y_test_pred)
+    precision_test, recall_test = evaluate_model_part(y_test, y_test_pred)
     if name != "MODEL3":
         print("\nVALIDATION DATA")
-        evaluate_model_part(y_val, y_val_pred)
+        precision_val, recall_val = evaluate_model_part(y_val, y_val_pred)
+        visualize_measures(precision_train, precision_test, precision_val, name, "precyzja")
+        visualize_measures(recall_train, recall_test, recall_val, name, "pełność")
+    else:
+        visualize_measures(precision_train, precision_test, title=name, measure="precyzja")
+        visualize_measures(recall_train, recall_test, title=name, measure="pełność")
 
 
 # SPLIT 1
@@ -62,4 +72,3 @@ print("\n\n")
 
 # SPLIT 2
 evaluate_model("MODEL3")
-print("\n\n")

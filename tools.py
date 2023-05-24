@@ -35,7 +35,7 @@ def visualize_history(history: tf.keras.callbacks.History, title = "", improveme
     fig, axs = plt.subplots(1, 2)
     fig.set_figheight(9)
     fig.set_figwidth(16)
-    fig.suptitle(title)
+    fig.suptitle(str(title) + " - " + str(improvement))
 
     axs[0].plot(df_hist["loss"], label="zbiór uczący")
     axs[0].plot(df_hist["val_loss"], label="zbiór walidacyjny")
@@ -56,7 +56,8 @@ def visualize_history(history: tf.keras.callbacks.History, title = "", improveme
         plt.savefig(f'{title}/training.jpg')
     else:
         plt.savefig(f'improvement/{improvement}.jpg')
-    plt.show()
+    plt.clf()
+    # plt.show()
 
 
 def normalize_data(data):
